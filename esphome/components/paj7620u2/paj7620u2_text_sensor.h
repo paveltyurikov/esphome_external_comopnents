@@ -30,7 +30,7 @@ class PAJ7620U2Component : public text_sensor::TextSensor, public PollingCompone
     void select_bank_1();
 
     bool get_gestures_reg_0(uint8_t *data);
-    bool get_gestures_reg_1(uint8_t data);
+    bool get_gestures_reg_1(uint8_t *data);
 };
 
 }  // namespace paj7620u2

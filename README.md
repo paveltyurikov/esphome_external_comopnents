@@ -1,4 +1,4 @@
-# esphome m5stack Gesture sensor
+# esphome m5stack PAJ7620U2 Gesture sensor
 
 ### example configuration:
 
@@ -6,7 +6,7 @@
 external_components:
   - source:
       type: git
-      path: https://github.com/paveltyurikov/esphome_paj7620u2_text_sensor
+      path: https://github.com/paveltyurikov/esphome_external_comopnents
       rev: main
     components: [ paj7620u2 ]
     

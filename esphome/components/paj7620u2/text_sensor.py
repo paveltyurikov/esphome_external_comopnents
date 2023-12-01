@@ -4,7 +4,6 @@ from esphome.components import text_sensor, i2c
 from esphome.const import (
     ENTITY_CATEGORY_DIAGNOSTIC,
     ICON_MOTION_SENSOR,
-    CONF_HIDE_TIMESTAMP,
 )
 # definitions and constants
 DEVICE_ADDRESS_I2C = 0x73

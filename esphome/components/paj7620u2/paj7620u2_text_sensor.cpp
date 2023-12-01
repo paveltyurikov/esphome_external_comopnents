@@ -17,32 +17,19 @@ static const  uint8_t BYTE_GESTURE_FORWARD              = 0x10;  // Forward gest
 static const  uint8_t BYTE_GESTURE_BACKWARD             = 0x20;  // Backward gesture
 static const  uint8_t BYTE_GESTURE_CLOCKWISE            = 0x40;  // Clockwise circular gesture
 static const  uint8_t BYTE_GESTURE_ANTICLOCKWISE        = 0x80;  // Anticlockwise circular gesture
-static const  uint8_t BYTE_GESTURE_GESTURE_WAVE         = 0xff;   // Wave gesture
+static const  uint8_t BYTE_GESTURE_GESTURE_WAVE         = 0xff;  // Wave gesture
+static const  uint8_t BYTE_WAVE_SLOWLY_UP_DOWN          = 0x0c;    // Up + Down
+static const  uint8_t BYTE_WAVE_SLOWLY_LEFT_RIGHT       = 0x03;  // Left + Right
+static const  uint8_t BYTE_WAVE_SLOWLY_FORWARD_BACKWARD = 0x30;
 
-static const uint8_t PART_ID_LSB                        = 0x20;
-static const uint8_t PART_ID_MSB                        = 0x76;
+static const uint8_t BANK0[1] = {0x00};
+static const uint8_t BANK1[1] = {0x01};
+
 
 static const uint8_t SELECT_BANK_CMD                    = 0xEF;  // W
 
 static const  uint8_t FREQUENCY_MODE_NORMAL             = 0xAC; // 120HZ, 60°/s - 600°/s
 static const  uint8_t FREQUENCY_MODE_GAME               = 0x30; // 240HZ, 60°/s - 1200°/s;
-
-
-
-
-
-std::map<uint8_t, std::string> gestures_map = {
-{ BYTE_GESTURE_NONE, "none"},
-{ BYTE_GESTURE_UP, "up"},
-{ BYTE_GESTURE_DOWN, "down"},
-{ BYTE_GESTURE_LEFT, "left"},
-{ BYTE_GESTURE_RIGHT, "right"},
-{ BYTE_GESTURE_FORWARD, "forward"},
-{ BYTE_GESTURE_BACKWARD, "backward"},
-{ BYTE_GESTURE_CLOCKWISE, "clockwise"},
-{ BYTE_GESTURE_ANTICLOCKWISE, "anticlockwise"},
-{ BYTE_GESTURE_GESTURE_WAVE, "gesture_wave"},
-};
 
 static const uint8_t INITIAL_REGISTER_VALUES[219][2] = {
     {0xEF,0x00},
@@ -267,18 +254,16 @@ static const uint8_t INITIAL_REGISTER_VALUES[219][2] = {
 };
 
 void PAJ7620U2Component::setup(){
-   ESP_LOGD(TAG, "Setup PAJ7620U2Component...");
-  this->select_bank_0();               // Default operations on BANK0
+  ESP_LOGD(TAG, "Setting up PAJ7620U2 sensor platform...");
   this->initialize_device();           // Set registers up (it ends up with BANK0 selected)
-  this->select_bank_0();
 }
 
 void PAJ7620U2Component::dump_config() {
-  ESP_LOGCONFIG(TAG, "Setting up PAJ7620U2 sensor platform...");
-  LOG_I2C_DEVICE(this);
+  ESP_LOGCONFIG(TAG, "PAJ7620U2 configuration:");
   if (this->is_failed()) {
     ESP_LOGE(TAG, "Connection with PAJ7620U2 failed!");
   }
+  LOG_I2C_DEVICE(this);
   LOG_UPDATE_INTERVAL(this);
   LOG_TEXT_SENSOR("", "Gesture sensor", this)
 }
@@ -289,77 +274,73 @@ void PAJ7620U2Component::update() {
   this->get_gestures_reg_0(&gesture_byte);
   std::string gesture = this->gesture_to_string(gesture_byte);
 
-//  if(this->gesture_sensor_!=gesture){
-//     this->gesture_sensor_ = gesture;
-//     this->publish_state(gesture);
-//  }
+  if(this->gesture_sensor_ != gesture){
+     this->gesture_sensor_ = gesture;
+     this->publish_state(this->gesture_sensor_);
+  }
 }
 
 void PAJ7620U2Component::initialize_device(){
+  this->select_bank_0();               // Default operations on BANK0
   for (uint16_t i = 0; i < sizeof(INITIAL_REGISTER_VALUES)/sizeof(INITIAL_REGISTER_VALUES[0]); i++) {
     this-write_byte(INITIAL_REGISTER_VALUES[i][0], INITIAL_REGISTER_VALUES[i][1]);
   }
+  this->select_bank_0();               // Default operations on BANK0
 }
 
 
 // Read the gestures interrupt vector #0 - all gestures except wave
 bool PAJ7620U2Component::get_gestures_reg_0(uint8_t *data){
-    return this->read_register(0x43, data, 1) == 0;
+    return this->read_byte(0x43, data);
 }
 
 
 // Read the gestures interrupt vector #1 - only holds wave
-bool PAJ7620U2Component::get_gestures_reg_1(uint8_t data){
-    return this->read_byte(0x44, &data);
+bool PAJ7620U2Component::get_gestures_reg_1(uint8_t *data){
+    return this->read_byte(0x44, data);
 }
 
-static const uint8_t BANK0[1] = {0x00};
-static const uint8_t BANK1[1] = {0x01};
-
 void PAJ7620U2Component::select_bank_0(){
-  this->write_register(SELECT_BANK_CMD, BANK0, 1);
+  this->write_byte(SELECT_BANK_CMD, 0x00);
 }
 
 void PAJ7620U2Component::select_bank_1(){
-  this->write_register(SELECT_BANK_CMD, BANK1, 1);
+  this->write_byte(SELECT_BANK_CMD, 0x01);
 }
 
 
 std::string PAJ7620U2Component::gesture_to_string(uint8_t gesture_byte){
     switch (gesture_byte){
         case BYTE_GESTURE_NONE:
-           ESP_LOGD(TAG, "Got gesture = none [%#x / %#x ]", BYTE_GESTURE_NONE, gesture_byte);
            return "none";
         case BYTE_GESTURE_UP:
-           ESP_LOGD(TAG, "Got gesture = up [%#x / %#x ]", BYTE_GESTURE_UP, gesture_byte);
            return "up";
         case BYTE_GESTURE_DOWN:
-           ESP_LOGD(TAG, "Got gesture = down [%#x / %#x ]", BYTE_GESTURE_DOWN, gesture_byte);
            return "down";
         case BYTE_GESTURE_LEFT:
-           ESP_LOGD(TAG, "Got gesture = left [%#x / %#x ]", BYTE_GESTURE_LEFT, gesture_byte);
            return "left";
         case BYTE_GESTURE_RIGHT:
-           ESP_LOGD(TAG, "Got gesture = right [%#x / %#x ]", BYTE_GESTURE_RIGHT, gesture_byte);
            return "right";
         case BYTE_GESTURE_FORWARD:
-           ESP_LOGD(TAG, "Got gesture = forward [%#x / %#x ]", BYTE_GESTURE_FORWARD, gesture_byte);
            return "forward";
         case BYTE_GESTURE_BACKWARD:
-           ESP_LOGD(TAG, "Got gesture = backward [%#x / %#x ]", BYTE_GESTURE_BACKWARD, gesture_byte);
            return "backward";
         case BYTE_GESTURE_CLOCKWISE:
-           ESP_LOGD(TAG, "Got gesture = clockwise [%#x / %#x ]", BYTE_GESTURE_CLOCKWISE, gesture_byte);
            return "clockwise";
         case BYTE_GESTURE_ANTICLOCKWISE:
-           ESP_LOGD(TAG, "Got gesture = anticlockwise [%#x / %#x ]", BYTE_GESTURE_ANTICLOCKWISE, gesture_byte);
            return "anticlockwise";
+        case BYTE_WAVE_SLOWLY_UP_DOWN:
+           return "wave_slowly_up_down";
+        case BYTE_WAVE_SLOWLY_LEFT_RIGHT:
+           return "wave_slowly_left_right";
+        case BYTE_WAVE_SLOWLY_FORWARD_BACKWARD:
+           return "wave_slowly_forward_backward";
         default:
-           ESP_LOGD(TAG, "Got gesture = default [ default / %#x ]",  gesture_byte);
+           ESP_LOGE(TAG, "Got gesture = default [ default / %#x ]",  gesture_byte);
            return "none";
     }
 
-    return gestures_map[gesture_byte];
+    return "none";
 }
 
 
