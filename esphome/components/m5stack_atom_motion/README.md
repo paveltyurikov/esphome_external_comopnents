@@ -180,8 +180,8 @@ async def test_servo_level(cli, channel):
 
 async def main():
     """Connect to an ESPHome device and wait for state changes."""
-    cli = aioesphomeapi.APIClient("m5_atom_motion.local", 6053, "",
-                                  noise_psk="LFpvKP3GAhSj8XDTBYBuCaiQGAniReaIpB4/NEcCwj0=")
+    cli = aioesphomeapi.APIClient("{{ your_device_id_or_domain_name.local }}", 6053, "",
+                                  noise_psk="{{ your_api_key }}")
 
     await cli.connect(login=True)
     await list_services(cli)
