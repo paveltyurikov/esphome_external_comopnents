@@ -6,7 +6,6 @@ namespace m5stack_atom_motion {
 
     static const char *const TAG = "m5stack_atom_motion.output";
 
-    static const uint8_t OUTPUT_REGISTER = 0x02;
     static const uint8_t IDLE_SERVO_VALUE = 90;
 
     void M5StackMotionOutput::setup() {
